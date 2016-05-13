@@ -20,3 +20,7 @@ def hello(request):
    dataset="babaji masti main aag lgegi basti main"
    daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
    return render(request, "myapp/hello.html", {"today" : yooyoo,"data" : dataset,"days_of_week" : daysOfWeek})
+
+
+def post_list(request):
+    return render(request,"myapp/post_list.html",{})
