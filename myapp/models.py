@@ -9,7 +9,7 @@ import datetime
 class Post(models.Model):
     author = models.ForeignKey('auth.User')
     title = models.CharField(max_length=200)
-    text =  models.TextField(blank=True, null=True)
+    text =  models.TextField(blank=False, null=False)
     created_date = models.DateTimeField(
         default = timezone.now)
     publish_date = models.DateTimeField(
