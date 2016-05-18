@@ -1,20 +1,12 @@
 from django.shortcuts import render, get_object_or_404,redirect
 from django.http import HttpResponse
-from .models import Post
+from .models import Post,Comment
 from django.utils import timezone
 import datetime
-from .forms import PostForm
+from .forms import PostForm,CommentForm
+from django.contrib.auth.decorators import login_required
 
 # Create your views here.
-
-def hello(request, number=6):
-    text="<h1>welcome to my app number %s!</h1>"% number
-    return HttpResponse(text)
-
-
-def viewArticle(request, month, year):
-   display ="Article no.s is month {0} & year {1}".format(month,year)
-   return HttpResponse(display)
 
 
 def hello(request):
@@ -32,7 +24,7 @@ def post_details(request,pk):
     post=get_object_or_404(Post,pk=pk)
     return render(request,"myapp/post_details.html",{'post': post})
 
-
+@login_required
 def post_new(request):
 
     if request.method =='POST':
@@ -40,7 +32,7 @@ def post_new(request):
         if form.is_valid():
             post=form.save(commit=False)
             post.author=request.user
-            post.publish_date=timezone.now()
+            #post.publish_date=timezone.now()
             post.save()
             return redirect('post_details' , pk=post.pk)
 
@@ -50,6 +42,7 @@ def post_new(request):
     return render(request,"myapp/post_edit.html",{'form':form})
 
 
+@login_required
 def post_edit(request,pk):
     post=get_object_or_404(Post,pk=pk)
 
@@ -67,3 +60,51 @@ def post_edit(request,pk):
       form = PostForm(instance=post)
 
     return render(request,"myapp/post_edit.html",{'form':form})
+
+
+@login_required
+def post_draft_list(request):
+    posts=Post.objects.filter(publish_date__isnull=True).order_by('created_date')
+    return render(request,'myapp/draft_posts.html',{'posts':posts})
+
+@login_required
+def post_publish(request, pk):
+    post = get_object_or_404(Post, pk=pk)
+    post.publish()
+    return redirect('myapp.views.post_details', pk=pk)
+
+@login_required
+def post_remove(request, pk):
+    post =  get_object_or_404(Post, pk=pk)
+    post.delete()
+    return redirect('myapp.views.post_list')
+
+
+def add_comment_to_post(request,pk):
+    post=get_object_or_404(Post,pk=pk)
+
+    if request.method=='POST':
+        form=CommentForm(request.POST)
+        if form.is_valid():
+            comment=form.save(commit=False)
+            comment.post=post
+            comment.save()
+            return redirect('myapp.views.post_details',pk=post.pk)
+    else:
+        form=CommentForm()
+
+    return render(request,'myapp/add_comment_to_post.html',{'form':form})
+
+@login_required
+def comment_approve(request,pk):
+    comment=get_object_or_404(Comment, pk=pk)
+    comment.approve()
+    return redirect('myapp.views.post_details', pk=comment.post.pk)
+
+
+@login_required
+def comment_remove(request,pk):
+    comment=get_object_or_404(Comment, pk=pk)
+    post_pk=comment.post.pk
+    comment.delete()
+    return redirect('myapp.views.post_details', pk=post_pk)
